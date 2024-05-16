@@ -1,0 +1,194 @@
+#include <esp_adc_cal.h>
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+#include "esp_log.h"
+
+#include <Arduino.h>
+
+#define ADC_PIN 35
+#define WS2812_DATA_PIN 2
+#define LED_PIN 12
+
+#define EXEC_EVERY(time)      \
+  static int32_t lastRun = 0; \
+  int32_t now = millis();     \
+  if (now < lastRun + time)   \
+    return;                   \
+  lastRun = millis();
+
+#include <FastLED.h>
+#define NUM_LEDS 1 * 5
+CRGB leds[NUM_LEDS];
+int vref = 1100;
+
+struct strip
+{
+  // char name[30];
+  int start;
+  int last;
+  int pos;
+  int stepTime;
+  uint32_t lastRun;
+  CRGB activeColor;
+  int remanence;
+};
+
+struct strip strips[] = {
+    {//.name="strip1",
+     .start = 0,
+     .last = 4,
+     .pos = 0,
+     .stepTime = 250,
+     .lastRun = millis(),
+     .activeColor = CRGB::Red,
+     .remanence = 0},
+     /*
+    {//.name="strip2",
+     .start = 12,
+     .last = 23,
+     .pos = 0,
+     .stepTime = 350,
+     .lastRun = millis(),
+     .activeColor = CRGB::Green,
+     .remanence = 1},
+    {//.name="strip3",
+     .start = 24,
+     .last = 35,
+     .pos = 0,
+     .stepTime = 150,
+     .lastRun = millis(),
+     .activeColor = CRGB(34, 43, 209),
+     .remanence = 2},
+    {//.name="strip4",
+     .start = 36,
+     .last = 47,
+     .pos = 0,
+     .stepTime = 375,
+     .lastRun = millis(),
+     .activeColor = CRGB(209, 52, 173),
+     .remanence = 3},
+    {//.name="strip5",
+     .start = 48,
+     .last = 59,
+     .pos = 0,
+     .stepTime = 300,
+     .lastRun = millis(),
+     .activeColor = CRGB(238, 160, 25),
+     .remanence = 4}*/
+  };
+int stripCount = sizeof(strips) / sizeof(struct strip);
+void animateStrip(struct strip *strip);
+void readBattery();
+void blinkLed();
+void setup()
+{
+  esp_log_level_set("*", esp_log_level_t::ESP_LOG_ERROR);    // set all components to ERROR level
+  esp_log_level_set("wifi", esp_log_level_t::ESP_LOG_WARN);  // enable WARN logs from WiFi stack
+  esp_log_level_set("dhcpc", esp_log_level_t::ESP_LOG_INFO); // enable INFO logs from DHCP client
+  esp_adc_cal_characteristics_t adc_chars;
+  esp_adc_cal_value_t val_type = esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, 1100, &adc_chars); // Check type of calibration value used to characterize ADC
+  if (val_type == ESP_ADC_CAL_VAL_EFUSE_VREF)
+  {
+    ESP_LOGW("bat","eFuse Vref:%u mV", adc_chars.vref);
+    vref = adc_chars.vref;
+  }
+  else if (val_type == ESP_ADC_CAL_VAL_EFUSE_TP)
+  {
+    ESP_LOGW("bat","Two Point --> coeff_a:%umV coeff_b:%umV\n", adc_chars.coeff_a, adc_chars.coeff_b);
+  }
+  else
+  {
+    ESP_LOGW("bat","Default Vref: 1100mV");
+  }
+  // put your setup code here, to run once:
+  Serial.begin(115200);
+ 
+  ESP_LOGI("main","Hello, ESP32!");
+  pinMode(LED_PIN, OUTPUT); // sets the digital pin 13 as output
+  pinMode(WS2812_DATA_PIN, OUTPUT); // sets the digital pin 13 as output
+  //FastLED.addLeds<WS2812, WS2812_DATA_PIN>(leds, NUM_LEDS);
+   FastLED.addLeds<WS2811, WS2812_DATA_PIN, RGB>(leds, NUM_LEDS);
+}
+void loopLedDemo(){
+   for(int whiteLed = 0; whiteLed < NUM_LEDS; whiteLed = whiteLed + 1) {
+      // Turn our current led on to white, then show the leds
+      leds[whiteLed] = CRGB::White;
+
+      // Show the leds (only one of which is set to white, from above)
+      FastLED.show();
+
+      // Wait a little bit
+      delay(100);
+
+      // Turn our current led back to black for the next loop around
+      leds[whiteLed] = CRGB::Black;
+   }
+}
+void loop()
+{
+  // put your main code here, to run repeatedly:
+  // delay(250); // this speeds up the simulation
+  // animateStrip1();
+  // animateStrip2();
+  loopLedDemo();
+  /*
+  for (int index = 0; index < stripCount; index++)
+  {
+    animateStrip(&strips[index]);
+  }
+
+  FastLED.show();
+  */
+  readBattery();
+  blinkLed();
+}
+void blinkLed()
+{
+  static uint8_t state = 0;
+  EXEC_EVERY(500);
+  ESP_LOGI("led", "Blink led state %d", state);
+  digitalWrite(LED_PIN, state);
+  state ^= 0x01;
+}
+void readBattery()
+{
+  EXEC_EVERY(1000);
+  uint16_t v = analogRead(ADC_PIN);
+  float battery_voltage = ((float)v / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
+ 
+  ESP_LOGI("bat","Voltage : %f V",battery_voltage);
+  if (battery_voltage == 0.00)
+  {
+    ESP_LOGW("bat","USB is connected, please disconnect USB.");
+  }
+}
+void animateStrip(struct strip *strip)
+{
+  int32_t now = millis();
+  if (now < strip->lastRun + strip->stepTime)
+    return;
+  strip->lastRun = millis();
+  for (int index = strip->start; index < strip->last; index++)
+  {
+    if (index == (strip->start + strip->pos))
+    {
+      leds[index] = strip->activeColor;
+    }
+    else
+    {
+      if (strip->remanence > 0)
+      {
+        CRGB step = strip->activeColor / (strip->remanence + 1);
+        leds[index] -= step;
+      }
+      else
+      {
+        leds[index] = CRGB::Black;
+      }
+    }
+  }
+  strip->pos++;
+  if (strip->pos + strip->start > strip->last)
+  {
+    strip->pos = 0;
+  }
+}
