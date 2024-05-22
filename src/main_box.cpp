@@ -1,7 +1,7 @@
 
 #include <M5Tough.h>
 #include "ble_server.h"
-
+//#include "Fonts/GFXFF/FreeSans24pt7b.h"
 #include "FastLED.h"
 #define EXEC_EVERY(time)      \
   static int32_t lastRun = 0; \
@@ -18,6 +18,18 @@
 #define COLOR_ORDER GRB
 CRGB leds [NUM_LEDS];
 uint8_t gBrightness = 128;
+#define NUM_COL  4
+#define MARGIN_X 2
+#define COL_W_OUT  (320/NUM_COL)
+#define COL_W_IN  (COL_W_OUT - (2*MARGIN_X))
+#define COLX(n) (n*COL_W_OUT)+MARGIN_X
+
+
+#define NUM_ROW  3
+#define MARGIN_Y 2
+#define ROW_H_OUT  (240/NUM_ROW)
+#define ROW_H_IN  (ROW_H_OUT - (2*MARGIN_Y))
+#define ROWY(n) (n*ROW_H_OUT)+MARGIN_Y
 
 
 ButtonColors on_clrs = {BLUE, WHITE, WHITE};
@@ -28,15 +40,22 @@ ButtonColors blueOn = {BLACK, BLUE, WHITE};
 ButtonColors blueOff = {BLUE, BLACK, WHITE};
 ButtonColors greenOn = {BLACK, GREEN, WHITE};
 ButtonColors greenOff = {GREEN, BLACK, WHITE};
-Button btnDownloadOrange  (20, 0    , 80, 80, false, "Rec", orangeOff, orangeOn, MC_DATUM);
-Button btnUploadOrange    (20, 160  , 80, 80, false, "Env", orangeOff, orangeOn, MC_DATUM);
-Button btnDownloadGreen   (120, 0   , 80, 80, false, "Rec", greenOff, greenOn, MC_DATUM);
-Button btnUploadGreen     (120, 160 , 80, 80, false, "Env", greenOff, greenOn, MC_DATUM);
-Button btnDownloadBlue    (220, 0   , 80, 80, false, "Rec", blueOff, blueOn, MC_DATUM);
-Button btnUploadBlue      (220, 160 , 80, 80, false, "Env", blueOff, blueOn, MC_DATUM);
-Button btnStopOrange      (20 , 100 , 80, 40, false, "Stop", off_clrs, on_clrs, MC_DATUM);
-Button btnStopBlue        (120 , 100 , 80, 40, false, "Stop", off_clrs, on_clrs, MC_DATUM);
-Button btnStopGreen       (220 , 100 , 80, 40, false, "Stop", off_clrs, on_clrs, MC_DATUM);
+
+Button btnDownloadOrange  (COLX(0), ROWY(0) , COL_W_IN, ROW_H_IN, false, "R", orangeOff, orangeOn, MC_DATUM);
+Button btnStopOrange      (COLX(0), ROWY(1) , COL_W_IN, ROW_H_IN, false, "X", orangeOff, orangeOn, MC_DATUM);
+Button btnUploadOrange    (COLX(0), ROWY(2) , COL_W_IN, ROW_H_IN, false, "E", orangeOff, orangeOn, MC_DATUM);
+
+Button btnDownloadGreen   (COLX(1), ROWY(0) , COL_W_IN, ROW_H_IN, false, "R", greenOff, greenOn, MC_DATUM);
+Button btnStopGreen       (COLX(1), ROWY(1) , COL_W_IN, ROW_H_IN, false, "X", greenOff, greenOn, MC_DATUM);
+Button btnUploadGreen     (COLX(1), ROWY(2) , COL_W_IN, ROW_H_IN, false, "E", greenOff, greenOn, MC_DATUM);
+
+Button btnDownloadBlue    (COLX(2), ROWY(0) , COL_W_IN, ROW_H_IN, false, "R", blueOff, blueOn, MC_DATUM);
+Button btnStopBlue        (COLX(2), ROWY(1) , COL_W_IN, ROW_H_IN, false, "X", blueOff, blueOn, MC_DATUM);
+Button btnUploadBlue      (COLX(2), ROWY(2) , COL_W_IN, ROW_H_IN, false, "E", blueOff, blueOn, MC_DATUM);
+
+Button btnDownloadAll    (COLX(3), ROWY(0) , COL_W_IN, ROW_H_IN, false, "R", off_clrs, on_clrs, MC_DATUM);
+Button btnStopAll        (COLX(3), ROWY(1) , COL_W_IN, ROW_H_IN, false, "X", off_clrs, on_clrs, MC_DATUM);
+Button btnUploadAll      (COLX(3), ROWY(2) , COL_W_IN, ROW_H_IN, false, "E", off_clrs, on_clrs, MC_DATUM);
 
 void eventDisplay(Event& e) {
   //M5.Lcd.fillRect(0, 0, 320, 150, BLACK);
@@ -50,32 +69,59 @@ void eventDisplay(Event& e) {
   char info[50];
     
   if (e.type==E_RELEASE){
+     if (e.button == &btnUploadAll){
+      startUploadHelmetGreen();
+      startUploadHelmetBlue();
+      startUploadHelmetOrange();
+      Notifiate();
+    }
     if (e.button == &btnUploadGreen){
       startUploadHelmetGreen();
+       Notifiate();
     }
     if (e.button == &btnDownloadGreen){
       startDownloadHelmetGreen();
+       Notifiate();
     }
     if (e.button == &btnUploadBlue){
       startUploadHelmetBlue();
+       Notifiate();
+    }
+     if (e.button == &btnDownloadAll){
+      startDownloadHelmetBlue();
+      startDownloadHelmetOrange();
+      startDownloadHelmetGreen();
+       Notifiate();
     }
     if (e.button == &btnDownloadBlue){
       startDownloadHelmetBlue();
+       Notifiate();
     }
     if (e.button == &btnUploadOrange){
       startUploadHelmetOrange();
+       Notifiate();
     }
     if (e.button == &btnDownloadOrange){
       startDownloadHelmetOrange();
+       Notifiate();
+    }
+    if (e.button == &btnStopAll){
+      stopOrange();
+       stopBlue();
+       stopGreen();
+       Notifiate();
     }
     if (e.button == &btnStopOrange){
       stopOrange();
+       Notifiate();
     }
     if (e.button == &btnStopBlue){
       stopBlue();
+       Notifiate();
     }
     if (e.button == &btnStopGreen){
       stopGreen();
+       Notifiate();
     }
   }
    
@@ -85,6 +131,31 @@ void eventDisplay(Event& e) {
 }
 #define LED_DATA_PIN GPIO_NUM_19
 
+
+void drawArrow(int x, int y, int asize, int aangle, int pwidth, int plength, uint16_t color){
+  float dx = (asize-10)*cos(aangle-90)*PI/180+x; // calculate X position  
+  float dy = (asize-10)*sin(aangle-90)*PI/180+y; // calculate Y position  
+  float x1 = 0;         float y1 = plength;
+  float x2 = pwidth/2;  float y2 = pwidth/2;
+  float x3 = -pwidth/2; float y3 = pwidth/2;
+  float angle = aangle*PI/180-135;
+  float xx1 = x1*cos(angle)-y1*sin(angle)+dx;
+  float yy1 = y1*cos(angle)+x1*sin(angle)+dy;
+  float xx2 = x2*cos(angle)-y2*sin(angle)+dx;
+  float yy2 = y2*cos(angle)+x2*sin(angle)+dy;
+  float xx3 = x3*cos(angle)-y3*sin(angle)+dx;
+  float yy3 = y3*cos(angle)+x3*sin(angle)+dy;
+  M5.Lcd.fillTriangle(xx1,yy1,xx3,yy3,xx2,yy2, color);
+  M5.Lcd.drawLine(x, y, xx1, yy1, color);
+  M5.Lcd.drawLine(x+1, y, xx1+1, yy1, color);
+  M5.Lcd.drawLine(x, y+1, xx1, yy1+1, color);
+  M5.Lcd.drawLine(x-1, y, xx1-1, yy1, color);
+  M5.Lcd.drawLine(x, y-1, xx1, yy1-1, color);
+  M5.Lcd.drawLine(x+2, y, xx1+2, yy1, color);
+  M5.Lcd.drawLine(x, y+2, xx1, yy1+2, color);
+  M5.Lcd.drawLine(x-2, y, xx1-2, yy1, color);
+  M5.Lcd.drawLine(x, y-2, xx1, yy1-2, color);
+}
 
 void setupLeds(){
     FastLED.addLeds<WS2812,LED_DATA_PIN,COLOR_ORDER>(leds, NUM_LEDS,0);
@@ -105,19 +176,26 @@ void setup() {
   digitalWrite(LED_DATA_PIN,1);
  
   M5.begin(true,false,false,true,kMBusModeOutput);
-  M5.Lcd.setTextSize(2);
+  M5.Lcd.setFreeFont(&Orbitron_Light_32 ); 
+  M5.Buttons.setFreeFont(&Orbitron_Light_32 );
   M5.Lcd.setTextDatum(MC_DATUM);
-  M5.Buttons.draw();
+
   //add handler for the buttons
   btnUploadOrange.addHandler(eventDisplay, E_ALL);
   btnUploadGreen.addHandler(eventDisplay, E_ALL);
   btnUploadBlue.addHandler(eventDisplay, E_ALL);
+  btnUploadAll.addHandler(eventDisplay, E_ALL);
   btnDownloadOrange.addHandler(eventDisplay, E_ALL);
   btnDownloadGreen.addHandler(eventDisplay, E_ALL);
   btnDownloadBlue.addHandler(eventDisplay, E_ALL);
+  btnDownloadAll.addHandler(eventDisplay, E_ALL);
   btnStopOrange.addHandler(eventDisplay, E_ALL);
   btnStopGreen.addHandler(eventDisplay, E_ALL);
   btnStopBlue.addHandler(eventDisplay, E_ALL);
+  btnStopAll.addHandler(eventDisplay, E_ALL);
+
+    M5.Buttons.draw();
+  //M5.Buttons.setTextSize(5);
   
 }
 void loopPin(){
@@ -161,7 +239,8 @@ void loopPower(){
     ESP_LOGI("pwr", "vbus volt: %0.02fV",M5.Axp.GetVBusVoltage());
 }
 
-void loop() {
+void loop() 
+{
  
   M5.update();
   loopPower();

@@ -53,6 +53,7 @@ void setup_ble_server()
     ESP_LOGI("ble_server", "Characteristic defined! Now you can read it in your phone!");
 }
 void loop_ble_server() {
+   
     // notify changed value
     if (deviceConnected) {
        // pCharacteristic->setValue(data);
@@ -71,37 +72,51 @@ void loop_ble_server() {
     if (deviceConnected && !oldDeviceConnected) {
         // do stuff here on connecting
         oldDeviceConnected = deviceConnected;
-         pCharacteristic->setValue(data);
+        pCharacteristic->setValue(data);
         pCharacteristic->notify();
+         
     }
     if (!helmetGreenState.isStopped && ( millis()-  helmetGreenState.lastStated) > ANIMATION_AUTO_STOP){
         stopGreen();
+         Notifiate();
     }
      if (!helmetOrangeState.isStopped && ( millis()-  helmetOrangeState.lastStated) > ANIMATION_AUTO_STOP){
         stopOrange();
+         Notifiate();
     }
      if (!helmetBlueState.isStopped && ( millis()-  helmetBlueState.lastStated) > ANIMATION_AUTO_STOP){
         stopBlue();
+         Notifiate();
     }
 }
-void Notifiate(THEATRE_PROTO flags)
+void Notifiate()
 {
-    Notifiate((uint32_t)flags);
-}
-void Notifiate(uint32_t flags)
-{
-    data = flags | (uint32_t)THEATRE_PROTO::SERV_READY;
+   
+    data=0;
+    data |= (uint32_t)THEATRE_PROTO::SERV_READY;
+    if (helmetGreenState.isUploaded) data |=  (uint32_t)THEATRE_PROTO::START_UPLOAD_HELMET_GREEN;
+    if (helmetGreenState.isDownloaded) data |=  (uint32_t)THEATRE_PROTO::START_DOWNLOAD_HELMET_GREEN;
+    if (helmetGreenState.isStopped) data |=  (uint32_t)THEATRE_PROTO::STOP_HELMET_GREEN;
 
+    if (helmetBlueState.isUploaded) data |=  (uint32_t)THEATRE_PROTO::START_UPLOAD_HELMET_BLUE;
+    if (helmetBlueState.isDownloaded) data |=  (uint32_t)THEATRE_PROTO::START_DOWNLOAD_HELMET_BLUE;
+    if (helmetBlueState.isStopped) data |=  (uint32_t)THEATRE_PROTO::STOP_HELMET_BLUE;
+
+
+    if (helmetOrangeState.isUploaded) data |=  (uint32_t)THEATRE_PROTO::START_UPLOAD_HELMET_ORANGE;
+    if (helmetOrangeState.isDownloaded) data |=  (uint32_t)THEATRE_PROTO::START_DOWNLOAD_HELMET_ORANGE;
+    if (helmetOrangeState.isStopped) data |=  (uint32_t)THEATRE_PROTO::STOP_HELMET_ORANGE;
     pCharacteristic->setValue(data);
     pCharacteristic->notify();
 }
+
 void startUploadHelmetGreen()
 {
     helmetGreenState.isUploaded=true;
     helmetGreenState.isStopped=false;
     helmetGreenState.isDownloaded=false;
     helmetGreenState.lastStated=millis();
-    Notifiate(THEATRE_PROTO::START_UPLOAD_HELMET_GREEN);
+   
 }
 void startUploadHelmetBlue()
 {
@@ -109,7 +124,7 @@ void startUploadHelmetBlue()
     helmetBlueState.isStopped=false;
     helmetBlueState.isDownloaded=false;
     helmetBlueState.lastStated=millis();
-    Notifiate(THEATRE_PROTO::START_UPLOAD_HELMET_BLUE);
+   
 }
 void startUploadHelmetOrange()
 {
@@ -117,7 +132,7 @@ void startUploadHelmetOrange()
     helmetOrangeState.isStopped=false;
     helmetOrangeState.isDownloaded=false;
     helmetOrangeState.lastStated=millis();
-    Notifiate(THEATRE_PROTO::START_UPLOAD_HELMET_ORANGE);
+   
 }
 
 void startDownloadHelmetGreen()
@@ -127,7 +142,7 @@ void startDownloadHelmetGreen()
     helmetGreenState.isStopped=false;
     helmetGreenState.isDownloaded=true;
     helmetGreenState.lastStated=millis();
-    Notifiate(THEATRE_PROTO::START_DOWNLOAD_HELMET_GREEN);
+   
 }
 void startDownloadHelmetBlue()
 {
@@ -135,7 +150,7 @@ void startDownloadHelmetBlue()
     helmetBlueState.isStopped=false;
     helmetBlueState.isDownloaded=true;
     helmetBlueState.lastStated=millis();
-    Notifiate(THEATRE_PROTO::START_DOWNLOAD_HELMET_BLUE);
+   
 }
 void startDownloadHelmetOrange()
 {
@@ -143,14 +158,14 @@ void startDownloadHelmetOrange()
     helmetOrangeState.isStopped=false;
     helmetOrangeState.isDownloaded=true;
     helmetOrangeState.lastStated=millis();
-    Notifiate(THEATRE_PROTO::START_DOWNLOAD_HELMET_ORANGE);
+   
 }
 void stopBlue()
 {
     helmetBlueState.isUploaded=false;
     helmetBlueState.isStopped=true;
     helmetBlueState.isDownloaded=false;
-    Notifiate(THEATRE_PROTO::STOP_HELMET_BLUE);
+   
 }
 
 void stopGreen()
@@ -158,12 +173,12 @@ void stopGreen()
     helmetGreenState.isUploaded=false;
     helmetGreenState.isStopped=true;
     helmetGreenState.isDownloaded=false;
-    Notifiate(THEATRE_PROTO::STOP_HELMET_GREEN);
+   
 }
 void stopOrange()
 {
     helmetOrangeState.isUploaded=false;
     helmetOrangeState.isStopped=true;
     helmetOrangeState.isDownloaded=false;
-    Notifiate(THEATRE_PROTO::STOP_HELMET_ORANGE);
+   
 }

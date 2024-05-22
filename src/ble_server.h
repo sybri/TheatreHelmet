@@ -7,8 +7,7 @@
 
 void setup_ble_server();
 void loop_ble_server();
-void Notifiate(THEATRE_PROTO flags);
-void Notifiate(uint32_t flags);
+void Notifiate();
 void startUploadHelmetGreen();
 void startUploadHelmetBlue();
 void startUploadHelmetOrange();

@@ -169,7 +169,7 @@ void setup_ble_client()
     pBLEScan->setWindow(449);
     pBLEScan->setActiveScan(true);
     bleBlinkSpeed=250;
-    pBLEScan->start(0, true);
+    pBLEScan->start(5, false);
     
 } // End of setup.
 
@@ -206,7 +206,7 @@ void loop_ble_client()
     else if (doScan)
     {
         bleBlinkSpeed=250;
-        BLEDevice::getScan()->start(0,true); // this is just eample to start scan after disconnect, most likely there is better way to do it in arduino
+        BLEDevice::getScan()->start(0); // this is just eample to start scan after disconnect, most likely there is better way to do it in arduino
     }
     ESP_LOGI("ble_client",".");
 
