@@ -4,8 +4,10 @@ on: [push]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-
+    runs-on: ubuntu-latest 
+    strategy:
+      matrix:
+        target: [HelmetBlue, HelmetGreen, HelmetOrange, Box]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/cache@v3
@@ -21,4 +23,4 @@ jobs:
         run: pip install --upgrade platformio
 
       - name: Build PlatformIO Project
-        run: pio run
+        run: pio run --environment ${{ matrix.target }}
