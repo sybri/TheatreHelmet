@@ -12,5 +12,10 @@
         "type_traits": "cpp",
         "utility": "cpp",
         "cmath": "cpp"
-    }
+    },
+    "atlascode.jira.startWorkBranchTemplate.customPrefixes": [
+        "feature",
+        "fix",
+        "refacto"
+    ]
 }
